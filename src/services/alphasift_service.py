@@ -1913,7 +1913,7 @@ def _build_alphasift_runtime_env(config: Config, *, max_results: Optional[int] =
     put("LITELLM_MODEL", litellm_model)
     if fallback_models:
         put("LITELLM_FALLBACK_MODELS", ",".join(fallback_models))
-    put("LITELLM_CONFIG", config.litellm_config_path)
+    put("LITELLM_CONFIG", config.llm_config_path)
     if os.getenv("LLM_TEMPERATURE") not in (None, ""):
         put("LLM_TEMPERATURE", config.llm_temperature)
 
@@ -1933,29 +1933,17 @@ def _build_alphasift_runtime_env(config: Config, *, max_results: Optional[int] =
                     json.dumps(channel.get("extra_headers"), ensure_ascii=False),
                 )
 
-    gemini_keys = _dedupe_strings([
-        *(config.gemini_api_keys or []),
-        *_channel_keys_for_provider(channels, {"gemini", "vertex_ai"}),
-    ])
-    anthropic_keys = _dedupe_strings([
-        *(config.anthropic_api_keys or []),
-        *_channel_keys_for_provider(channels, {"anthropic"}),
-    ])
-    openai_keys = _dedupe_strings([
-        *(config.openai_api_keys or []),
-        *_channel_keys_for_provider(channels, {"openai"}),
-    ])
-    deepseek_keys = _dedupe_strings([
-        *(config.deepseek_api_keys or []),
-        *_channel_keys_for_provider(channels, {"deepseek"}),
-    ])
+    gemini_keys = _dedupe_strings([])
+    anthropic_keys = _dedupe_strings([])
+    openai_keys = _dedupe_strings([])
+    deepseek_keys = _dedupe_strings([])
 
     _put_provider_keys(env, "GEMINI", gemini_keys)
     _put_provider_keys(env, "ANTHROPIC", anthropic_keys)
     _put_provider_keys(env, "OPENAI", openai_keys)
     _put_provider_keys(env, "DEEPSEEK", deepseek_keys)
 
-    put("OPENAI_BASE_URL", config.openai_base_url or _first_channel_base_url(channels, {"openai"}))
+    put("OPENAI_BASE_URL", _first_channel_base_url(channels, {"openai"}))
     put_default("DAILY_SOURCE", "auto")
     put_default("DAILY_FETCH_RETRIES", str(DSA_ALPHASIFT_DAILY_FETCH_RETRIES))
     put_default("DAILY_FETCH_MAX_WORKERS", "1")
@@ -2856,7 +2844,7 @@ def _build_alphasift_context(config: Config, *, max_results: Optional[int] = Non
             "temperature": config.llm_temperature,
             "channels": channels,
             "model_list": _build_alphasift_litellm_model_list(config, channels),
-            "litellm_config_path": config.litellm_config_path or "",
+            "litellm_config_path": getattr(config, 'litellm_config_path', None) or config.llm_config_path or "",
             "candidate_context_enabled": False,
             "candidate_multiplier": DSA_ALPHASIFT_LLM_CANDIDATE_MULTIPLIER,
             "max_candidates": _resolve_dsa_llm_max_candidates(max_results),
@@ -2946,7 +2934,7 @@ def _alphasift_litellm_headers(config: Config) -> Iterator[None]:
 
 
 def _build_alphasift_litellm_model_list(config: Config, channels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    explicit_model_list = _to_plain(config.llm_model_list or [])
+    explicit_model_list = _to_plain(getattr(config, 'llm_model_list', None) or [])
     if isinstance(explicit_model_list, list) and explicit_model_list:
         return explicit_model_list
     return _channel_litellm_model_list(channels)
@@ -3040,8 +3028,8 @@ def _resolve_dsa_llm_max_candidates(max_results: Optional[int]) -> int:
 
 
 def _resolve_alphasift_llm_models(config: Config) -> Tuple[str, List[str]]:
-    primary = _env_text(config.litellm_model)
-    configured_models = get_configured_llm_models(config.llm_model_list or [])
+    primary = _env_text(config.llm_model)
+    configured_models = get_configured_llm_models(getattr(config, 'llm_model_list', None) or [])
     configured_model_set = set(configured_models)
 
     if configured_models and (
@@ -3049,7 +3037,7 @@ def _resolve_alphasift_llm_models(config: Config) -> Tuple[str, List[str]]:
     ):
         primary = configured_models[0]
 
-    raw_fallbacks = _dedupe_strings(config.litellm_fallback_models or [])
+    raw_fallbacks = _dedupe_strings(config.llm_fallback_models or [])
     if not configured_models:
         return primary, [model for model in raw_fallbacks if model != primary]
 

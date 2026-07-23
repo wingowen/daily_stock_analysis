@@ -31,6 +31,10 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     # 兼容误将 STOCK_LIST 配到同名 Environment variables 的场景；
     # 推荐位置仍是 Settings -> Secrets and variables -> Actions -> Repository variables。
     environment: STOCK_LIST
@@ -545,3 +549,21 @@ jobs:
             echo "📜 最近日志（最后 30 行）:"
             tail -30 logs/stock_analysis_*.log 2>/dev/null || echo "无日志"
           fi
+
+      - name: 报告转 HTML 并部署到 Pages
+        if: always()
+        run: |
+          mkdir -p _site
+          pip install markdown -q
+          python3 scripts/build_pages.py
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: _site
+
+      - name: 部署到 GitHub Pages
+        uses: actions/deploy-pages@v4
+        id: deployment
+        if: always()

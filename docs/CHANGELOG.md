@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [文档] `.env.example` 与 `.github/workflows/00-daily-analysis.yml` 同步映射 `TUSHARE_HTTP_URL`，避免出现"配置项有但 workflow 漏映射"的半修状态
 - [修复] #2051 PR Review 的特权 `pull_request_target` 流程不再检出 fork PR head：敏感文件、标签、报告与 AI 审查统一通过 GitHub API 将 PR 元数据和 diff 作为数据读取，只执行主分支可信脚本；Python 语法、Flake8、确定性检查和离线测试继续由无 secrets 的 `pull_request` CI / `backend-gate` 执行，兼容 `actions/checkout` 新增的 fork checkout 安全保护。
 - [修复] 修复 Windows 上 mimetypes 冷启动时读取注册表导致的进程卡死
+- [新功能] 分析报告保存后可自动注册 `ideal_buy` / `secondary_buy` / `stop_loss` / `take_profit` 价位的 `price_cross` 告警规则（`source=analysis`，带 `expires_at` 过期），Opt-in 通过 `AGENT_ANALYSIS_ALERT_BRIDGE_ENABLED` 控制，默认关闭；支持同股+同方向+同价格去重，单条失败不阻断主流程，过期规则不再被 worker 加载。
+- [新功能] `spring_signals_to_reports.py` 新增 `--all-signals` 参数，支持对最新交易日全部威科夫信号（不限 Spring）队列式逐只生成完整分析报告，信号快照按模式分别落盘 `data/wyckoff_latest_signals.json` / `data/spring_signals.json`；`refresh_signal.sh` 步骤 3 默认改为全量信号模式。
+- [新功能] 威科夫列表页新增「生成分析报告」按钮：`POST /api/v1/wyckoff/market/generate-reports` 提交后台任务，对最新交易日全部信号（可选仅 Spring）逐只执行完整分析 pipeline 并逐股上报 SSE 进度，配套 `GET /market/generate-reports/status/{task_id}` 回退查询；同一时间仅允许一个生成任务（409 防重复），报告落库 AnalysisHistory 后首页历史自动展示。
+- [文档] 新增 `docs/wyckoff-daily-plan-skill.md`：梳理 `wyckoff-daily-plan` 技能全流程（SOS+LPS 上游原理、采集脚本参数与 JSON 契约、四级数据源降级链、LLM 逐股研判与四级梯队分级、历史 picks 验证闭环、故障排查），所有命令/字段/阈值与代码现状核对，并记录两份 SKILL.md 分叉等一致性问题
+- [修复] 大盘复盘报告的「复盘时间」页脚与报告日期统一按北京时间（UTC+8）渲染：新增 `_now_cn()` 单一入口替换裸 `datetime.now()`，修复 GitHub Actions 云端（UTC 时区）运行时页脚显示 UTC 时间、以及 UTC 00:00-08:00（北京时间上午）运行时报告日期回退一天的问题；中英文模板页脚一并修复，并补充时区回归测试。
 
 ## [3.27.0] - 2026-07-19
 

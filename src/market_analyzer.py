@@ -14,7 +14,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from inspect import getattr_static
 from typing import Optional, Dict, Any, List
 
@@ -36,6 +36,15 @@ from src.services.intelligence_service import IntelligenceService
 from data_provider.base import DataFetcherManager
 
 logger = logging.getLogger(__name__)
+
+# 报告面向国内用户，统一使用北京时间（UTC+8，无夏令时）；
+# 避免 GitHub Actions 等云端环境（UTC 时区）生成报告时日期/时间显示偏差。
+CN_TZ = timezone(timedelta(hours=8))
+
+
+def _now_cn() -> datetime:
+    """返回当前北京时间（UTC+8）。"""
+    return datetime.now(CN_TZ)
 
 
 _ENGLISH_SECTION_PATTERNS = {
@@ -428,7 +437,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         Returns:
             MarketOverview: 市场概览数据对象
         """
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = _now_cn().strftime('%Y-%m-%d')
         overview = MarketOverview(date=today)
         
         # 1. 获取主要指数行情（按 region 切换 A 股/美股）
@@ -1714,7 +1723,7 @@ Market conditions can change quickly. The data above is for reference only and d
 {self._get_strategy_markdown_block(template_language)}
 
 ---
-*Review Time: {datetime.now().strftime('%H:%M')}*
+*Review Time: {_now_cn().strftime('%H:%M')}*
 """
             return report
 
@@ -1774,7 +1783,7 @@ Market conditions can change quickly. The data above is for reference only and d
 - 市场有风险，投资需谨慎。以上数据仅供参考，不构成投资建议。
 
 ---
-*复盘时间: {datetime.now().strftime('%H:%M')}*
+*复盘时间: {_now_cn().strftime('%H:%M')}*
 """
     
     def _run_daily_review_parts(self) -> MarketLightReviewResult:

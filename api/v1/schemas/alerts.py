@@ -27,6 +27,7 @@ class AlertRuleCreateRequest(BaseModel):
     enabled: bool = True
     cooldown_policy: Optional[Dict[str, Any]] = None
     notification_policy: Optional[Dict[str, Any]] = None
+    expires_at: Optional[str] = None
 
 
 class AlertRuleUpdateRequest(BaseModel):
@@ -39,6 +40,7 @@ class AlertRuleUpdateRequest(BaseModel):
     enabled: Optional[bool] = None
     cooldown_policy: Optional[Dict[str, Any]] = None
     notification_policy: Optional[Dict[str, Any]] = None
+    expires_at: Optional[str] = None
 
 
 class AlertRuleItem(BaseModel):
@@ -53,6 +55,7 @@ class AlertRuleItem(BaseModel):
     source: str
     cooldown_policy: Optional[Dict[str, Any]] = None
     notification_policy: Optional[Dict[str, Any]] = None
+    expires_at: Optional[str] = None
     last_triggered_at: Optional[str] = None
     cooldown_until: Optional[str] = None
     cooldown_active: Optional[bool] = None

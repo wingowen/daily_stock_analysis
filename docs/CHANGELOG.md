@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [文档] 将简体、英文和繁体 README 首页的 HelloGitHub 徽章替换为 Star History 全球排名徽章，与 Trendshift 徽章等高并排展示。
 - [改进] 历史个股栏批量统计展示股票的历史分析次数，减少刷新时的数据库查询。
 - [修复] 持仓交易、现金流水和公司行动拒绝 NaN / Infinity 等非有限数值；CSV 预览、预演和提交在写入前拒绝包含非有限数值或费税合计溢出的交易行，并返回行号和字段，避免污染账本和快照；API 校验错误中的非有限数值可安全返回 JSON。
+- [新功能] 新增 Wyckoff 信号引擎（`src/services/wyckoff/`）：SOS→LPS 触发识别与 Spring / Test / 量价趋势客观特征，配套只读接口 `/api/v1/wyckoff/signals`、`/api/v1/wyckoff/detail/{code}`；由新增配置 `WYCKOFF_ENABLED`（默认 `false`）统一开关，关闭时返回 403，不影响既有分析、报告与通知流程。
+- [新功能] Wyckoff 信号支持告警联动：每个信号生成两条独立 `price_cross` 规则（下破 LPS 低点为结构失效、上破 SOS 高点为放量确认），复用现有 alert 路由与通知渠道（含邮件）；新增 `WYCKOFF_ALERTS_ENABLED`（默认 `false`）与 `WYCKOFF_ALERT_EXPIRE_DAYS`（默认 `30`，`0` 表示永不过期）；告警规则新增 `expires_at` 字段并过滤过期规则，信号接口只增字段追加 `sos_high` / `trigger_low`。
+- [新功能] 新增 `scripts/backfill_daily_indicators.py`，复用 `data_provider` 同款公式补齐 `stock_daily` 中缺失或非法的 `ma20` / `volume_ratio`，默认 dry-run 先输出待回填规模，仅补 NULL 或非法值且可重复执行。
+- [新功能] 新增 Wyckoff 前端页面（`/wyckoff`）：左侧信号列表 + 右侧个股 K 线（蜡烛、MA20、成交量、LPS 触发点与 SOS 高点 / LPS 低点参考线），支持日期筛选与陈旧提示；`echarts` 单独分包并随路由懒加载，不进入首屏；接口未启用（403）与无数据（404）分别显示未启用提示与空态。
 
 ## [3.35.0] - 2026-11-16
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, delete, desc, func, select
+from sqlalchemy import and_, delete, desc, func, or_, select
 
 from src.storage import (
     AlertCooldownRecord,
@@ -103,10 +103,17 @@ class AlertRepository:
 
     def list_enabled_rules(self, *, limit: int = 1000) -> List[AlertRuleRecord]:
         safe_limit = max(1, min(int(limit), 1000))
+        now = datetime.now()
         with self.db.get_session() as session:
             rows = session.execute(
                 select(AlertRuleRecord)
                 .where(AlertRuleRecord.enabled.is_(True))
+                .where(
+                    or_(
+                        AlertRuleRecord.expires_at.is_(None),
+                        AlertRuleRecord.expires_at > now,
+                    )
+                )
                 .order_by(desc(AlertRuleRecord.updated_at), desc(AlertRuleRecord.id))
                 .limit(safe_limit)
             ).scalars().all()

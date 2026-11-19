@@ -142,6 +142,9 @@ const vendorChunkByPackage: Record<string, string> = {
   'motion-utils': 'vendor-motion',
   'lucide-react': 'vendor-icons',
   recharts: 'vendor-charts',
+  // echarts 仅由 /wyckoff 路由按需加载，单独分包避免进入首屏 vendor。
+  echarts: 'vendor-echarts',
+  zrender: 'vendor-echarts',
   'victory-vendor': 'vendor-charts',
   '@reduxjs/toolkit': 'vendor-charts',
   'decimal.js-light': 'vendor-charts',

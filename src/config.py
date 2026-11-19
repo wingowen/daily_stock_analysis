@@ -1013,6 +1013,11 @@ class Config:
     # === Built-in stock screening ===
     screening_enabled: bool = False
 
+    # === Wyckoff signal engine ===
+    wyckoff_enabled: bool = False
+    wyckoff_alerts_enabled: bool = False
+    wyckoff_alert_expire_days: int = 30
+
     # === AI 分析配置 ===
     generation_backend: str = LITELLM_BACKEND_ID
     generation_fallback_backend: str = LITELLM_BACKEND_ID
@@ -2453,6 +2458,14 @@ class Config:
             ),
             portfolio_fx_update_enabled=os.getenv('PORTFOLIO_FX_UPDATE_ENABLED', 'true').lower() == 'true',
             screening_enabled=parse_env_bool(os.getenv('SCREENING_ENABLED'), default=False),
+            wyckoff_enabled=parse_env_bool(os.getenv('WYCKOFF_ENABLED'), default=False),
+            wyckoff_alerts_enabled=parse_env_bool(os.getenv('WYCKOFF_ALERTS_ENABLED'), default=False),
+            wyckoff_alert_expire_days=parse_env_int(
+                os.getenv('WYCKOFF_ALERT_EXPIRE_DAYS'),
+                30,
+                field_name='WYCKOFF_ALERT_EXPIRE_DAYS',
+                minimum=0,
+            ),
         )
     
     @classmethod

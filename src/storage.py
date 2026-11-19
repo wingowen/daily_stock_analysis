@@ -969,6 +969,7 @@ class AlertRuleRecord(Base):
     source = Column(String(16), nullable=False, default='api', index=True)
     cooldown_policy = Column(Text)
     notification_policy = Column(Text)
+    expires_at = Column(DateTime, index=True)
     created_at = Column(DateTime, default=datetime.now, index=True)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, index=True)
 
@@ -1452,6 +1453,7 @@ class DatabaseManager(metaclass=_DatabaseManagerMeta):
 
             # 创建所有表
             Base.metadata.create_all(self._engine)
+            self._ensure_alert_rule_expires_at()
             self._ensure_llm_usage_telemetry_columns()
             self._ensure_decision_signal_profile_schema()
             self._ensure_stock_daily_canonical_id()
@@ -1510,6 +1512,30 @@ class DatabaseManager(metaclass=_DatabaseManagerMeta):
             raise
         finally:
             session.close()
+
+    def _ensure_alert_rule_expires_at(self) -> None:
+        """Additive expiry column for alert rules; older writers omit it."""
+        if not self._is_sqlite_engine:
+            return
+        existing = {
+            column["name"] for column in inspect(self._engine).get_columns(
+                AlertRuleRecord.__tablename__
+            )
+        }
+        if "expires_at" in existing:
+            return
+        for attempt in range(self._sqlite_write_retry_max + 1):
+            try:
+                with self._engine.begin() as connection:
+                    connection.exec_driver_sql("ALTER TABLE alert_rules ADD COLUMN expires_at DATETIME")
+                return
+            except OperationalError as exc:
+                if self._is_sqlite_duplicate_column_error(exc, "expires_at"):
+                    return
+                if self._is_sqlite_locked_error(exc) and attempt < self._sqlite_write_retry_max:
+                    time.sleep(self._sqlite_write_retry_base_delay * (2 ** attempt))
+                    continue
+                raise
 
     def _ensure_chat_session_schema(self) -> None:
         """Additive Chat state migration; old writers may omit every new column."""

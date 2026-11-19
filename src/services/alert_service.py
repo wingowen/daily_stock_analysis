@@ -78,7 +78,7 @@ SYMBOL_ALERT_TYPES = LEGACY_RUNTIME_ALERT_TYPES | TECHNICAL_ALERT_TYPES
 SUPPORTED_ALERT_TYPES = SYMBOL_ALERT_TYPES | PORTFOLIO_ALERT_TYPES | MARKET_ALERT_TYPES
 SUPPORTED_TARGET_SCOPES = frozenset({"single_symbol", "watchlist", "portfolio_holdings", "portfolio_account", "market"})
 SUPPORTED_SEVERITIES = frozenset({"info", "warning", "critical"})
-NULLABLE_RULE_UPDATE_FIELDS = frozenset({"cooldown_policy", "notification_policy"})
+NULLABLE_RULE_UPDATE_FIELDS = frozenset({"cooldown_policy", "notification_policy", "expires_at"})
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +108,8 @@ class AlertService:
         self.db = db_manager or DatabaseManager.get_instance()
         self.repo = AlertRepository(self.db)
 
-    def create_rule(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        fields = self._normalize_rule_payload(payload)
+    def create_rule(self, payload: Dict[str, Any], *, source: str = "api") -> Dict[str, Any]:
+        fields = self._normalize_rule_payload(payload, source=source)
         return self._serialize_rule(self.repo.create_rule(fields))
 
     def get_rule(self, rule_id: int) -> Dict[str, Any]:
@@ -899,6 +899,11 @@ class AlertService:
         if not name:
             name = self._default_rule_name(target=target, alert_type=alert_type, parameters=parameters)
 
+        raw_expires_at = payload.get("expires_at")
+        expires_at = self._coerce_datetime(raw_expires_at)
+        if raw_expires_at is not None and expires_at is None:
+            raise AlertServiceError("invalid expires_at")
+
         return {
             "name": name[:64],
             "target_scope": target_scope,
@@ -910,6 +915,7 @@ class AlertService:
             "source": str(source or "api")[:16],
             "cooldown_policy": self._dump_json_or_none(payload.get("cooldown_policy")),
             "notification_policy": self._dump_json_or_none(payload.get("notification_policy")),
+            "expires_at": expires_at,
         }
 
     def _validate_rule_update_payload(self, payload: Dict[str, Any]) -> None:
@@ -1189,6 +1195,7 @@ class AlertService:
             "source": row.source,
             "cooldown_policy": self._load_json(row.cooldown_policy, default=None),
             "notification_policy": self._load_json(row.notification_policy, default=None),
+            "expires_at": row.expires_at.isoformat() if row.expires_at else None,
             "created_at": row.created_at.isoformat() if row.created_at else None,
             "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         }

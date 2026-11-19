@@ -1061,6 +1061,91 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             },
         ],
     },
+    "WYCKOFF_ENABLED": {
+        "title": "Wyckoff Signal Engine",
+        "description": "Enable the read-only Wyckoff SOS/LPS signal endpoints. Disabled by default; enabling only exposes query APIs and does not change existing analysis, report, or notification flows.",
+        "category": "base",
+        "data_type": "boolean",
+        "ui_control": "switch",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "false",
+        "options": [],
+        "validation": {},
+        "display_order": 18,
+        "help_key": "settings.base.WYCKOFF_ENABLED",
+        "examples": [
+            "WYCKOFF_ENABLED=false",
+            "WYCKOFF_ENABLED=true",
+        ],
+        "docs": [
+            {
+                "label": "Wyckoff Method（Investopedia）",
+                "href": "https://www.investopedia.com/terms/w/wyckoff-method.asp",
+            },
+        ],
+    },
+    "WYCKOFF_ALERTS_ENABLED": {
+        "title": "Wyckoff Alert Bridge",
+        "description": (
+            "Create alert-center price_cross rules from Wyckoff signals: one rule "
+            "below the LPS low (structure invalidation) and one above the SOS high "
+            "(breakout confirmation). Requires WYCKOFF_ENABLED and the enabled event "
+            "monitor for actual delivery."
+        ),
+        "category": "base",
+        "data_type": "boolean",
+        "ui_control": "switch",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "false",
+        "options": [],
+        "validation": {},
+        "display_order": 19,
+        "help_key": "settings.base.WYCKOFF_ALERTS_ENABLED",
+        "examples": [
+            "WYCKOFF_ALERTS_ENABLED=false",
+            "WYCKOFF_ALERTS_ENABLED=true",
+        ],
+        "docs": [
+            {
+                "label": "Wyckoff Method（Investopedia）",
+                "href": "https://www.investopedia.com/terms/w/wyckoff-method.asp",
+            },
+        ],
+        "warning_codes": [],
+    },
+    "WYCKOFF_ALERT_EXPIRE_DAYS": {
+        "title": "Wyckoff Alert Expiry (Days)",
+        "description": (
+            "How many days after the signal date generated Wyckoff alert rules "
+            "stay active. 0 means the rules never expire."
+        ),
+        "category": "base",
+        "data_type": "integer",
+        "ui_control": "number",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "30",
+        "options": [],
+        "validation": {"min": 0},
+        "display_order": 20,
+        "help_key": "settings.base.WYCKOFF_ALERT_EXPIRE_DAYS",
+        "examples": [
+            "WYCKOFF_ALERT_EXPIRE_DAYS=30",
+            "WYCKOFF_ALERT_EXPIRE_DAYS=0",
+        ],
+        "docs": [
+            {
+                "label": "Wyckoff Method（Investopedia）",
+                "href": "https://www.investopedia.com/terms/w/wyckoff-method.asp",
+            },
+        ],
+        "warning_codes": [],
+    },
     "REALTIME_SOURCE_PRIORITY": {
         "title": "Realtime Source Priority",
         "description": "Comma-separated priority for realtime quote providers.",
